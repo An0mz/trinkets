@@ -50,6 +50,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 
@@ -87,7 +88,7 @@ public abstract class LivingEntityMixin extends Entity {
 	private void dropInventory(CallbackInfo info) {
 		LivingEntity entity = (LivingEntity) (Object) this;
 
-		boolean keepInv = entity.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
+		boolean keepInv = entity.getWorld() instanceof ServerWorld serverWorld && serverWorld.getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
 		TrinketsApi.getTrinketComponent(entity).ifPresent(trinkets -> trinkets.forEach((ref, stack) -> {
 			if (stack.isEmpty()) {
 				return;
@@ -129,14 +130,15 @@ public abstract class LivingEntityMixin extends Entity {
 	}
 
 	private void dropFromEntity(ItemStack stack) {
-		ItemEntity entity = dropStack(stack);
+		if (!(this.getWorld() instanceof ServerWorld serverWorld)) return;
+		ItemEntity itemEntity = dropStack(serverWorld, stack);
 		// Mimic player drop behavior for only players
-		if (entity != null && ((Entity) this) instanceof PlayerEntity) {
-			entity.setPos(entity.getX(), this.getEyeY() - 0.3, entity.getZ());
-			entity.setPickupDelay(40);
+		if (itemEntity != null && ((Entity) this) instanceof PlayerEntity) {
+			itemEntity.setPos(itemEntity.getX(), this.getEyeY() - 0.3, itemEntity.getZ());
+			itemEntity.setPickupDelay(40);
 			float magnitude = this.random.nextFloat() * 0.5f;
 			float angle = this.random.nextFloat() * ((float)Math.PI * 2);
-			entity.setVelocity(-MathHelper.sin(angle) * magnitude, 0.2f, MathHelper.cos(angle) * magnitude);
+			itemEntity.setVelocity(-MathHelper.sin(angle) * magnitude, 0.2f, MathHelper.cos(angle) * magnitude);
 		}
 	}
 

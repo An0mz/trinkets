@@ -31,7 +31,7 @@ public class EnchantmentDefinitionMixin implements TrinketSlotTarget {
 		this.trinketSlots = slots;
 	}
 
-	@ModifyExpressionValue(method = "<clinit>", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/codecs/RecordCodecBuilder;mapCodec(Ljava/util/function/Function;)Lcom/mojang/serialization/MapCodec;"))
+	@ModifyExpressionValue(method = "<clinit>", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/codecs/RecordCodecBuilder;mapCodec(Ljava/util/function/Function;)Lcom/mojang/serialization/MapCodec;", remap = false))
 	private static MapCodec<Enchantment.Definition> extendCodec(MapCodec<Enchantment.Definition> codec) {
 		return RecordCodecBuilder.mapCodec(instance -> instance.group(
 				codec.forGetter(Function.identity()),

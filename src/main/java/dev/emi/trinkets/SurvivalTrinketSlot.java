@@ -54,11 +54,7 @@ public class SurvivalTrinketSlot extends Slot implements TrinketSlot {
 				if (world.isClient) {
 					MinecraftClient client = MinecraftClient.getInstance();
 					Screen s = client.currentScreen;
-					if (s instanceof InventoryScreen screen) {
-						if (screen.getRecipeBookWidget().isOpen()) {
-							return false;
-						}
-					}
+					// TODO: check recipe book open state in 1.21.2 (API changed)
 				}
 			}
 			return true;

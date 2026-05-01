@@ -26,7 +26,7 @@ import dev.emi.trinkets.data.SlotLoader.SlotData;
 import dev.emi.trinkets.payload.SyncSlotsPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
+import java.util.Optional;
 import net.minecraft.entity.EntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.Resource;
@@ -145,7 +145,7 @@ public class EntitySlotLoader extends SinglePreparationResourceReloader<Map<Stri
 
 					types.addAll(entityTypes);*/
 				} else {
-					types.add(Registries.ENTITY_TYPE.getOrEmpty(Identifier.of(entityName))
+					types.add(Optional.ofNullable(Registries.ENTITY_TYPE.get(Identifier.of(entityName)))
 							.orElseThrow(() -> new IllegalArgumentException("Unknown entity '" + entityName + "'")));
 				}
 			} catch (IllegalArgumentException e) {
@@ -212,6 +212,6 @@ public class EntitySlotLoader extends SinglePreparationResourceReloader<Map<Stri
 
 	@Override
 	public Collection<Identifier> getFabricDependencies() {
-		return Lists.newArrayList(SlotLoader.ID, ResourceReloadListenerKeys.TAGS);
+		return Lists.newArrayList(SlotLoader.ID);
 	}
 }

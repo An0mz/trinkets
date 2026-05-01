@@ -2,8 +2,10 @@ package dev.emi.trinkets.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import dev.emi.trinkets.TrinketScreen;
 import dev.emi.trinkets.TrinketScreenManager;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -18,6 +20,7 @@ import dev.emi.trinkets.mixin.accessor.CreativeSlotAccessor;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen.CreativeSlot;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Identifier;
 
@@ -44,6 +47,16 @@ public abstract class HandledScreenMixin extends Screen {
 		}
 	}
 
+	@Inject(at = @At("HEAD"), method = "isClickOutsideBounds", cancellable = true)
+	private void isClickOutsideBounds(double mouseX, double mouseY, int left, int top, int button, CallbackInfoReturnable<Boolean> info) {
+		Object self = this;
+		if (!(self instanceof TrinketScreen)) return;
+		if (self instanceof CreativeInventoryScreen cis && !cis.isInventoryTabSelected()) return;
+		if (TrinketScreenManager.isClickInsideTrinketBounds(mouseX, mouseY)) {
+			info.setReturnValue(false);
+		}
+	}
+
 	@Inject(at = @At(value = "INVOKE", target = "net/minecraft/client/util/math/MatrixStack.translate(FFF)V"),
 		method = "drawSlot")
 	private void changeZ(DrawContext context, Slot slot, CallbackInfo info) {
@@ -62,12 +75,12 @@ public abstract class HandledScreenMixin extends Screen {
 
 			if (ts.isTrinketFocused()) {
 				// Thus, I need to draw trinket slot backs over normal items at z 300 (310 was chosen)
-				context.drawTexture(slotTextureId, slot.x, slot.y, 310, 0, 0, 16, 16, 16, 16);
+				context.drawTexture(RenderLayer::getGuiTextured, slotTextureId, slot.x, slot.y, 0, 0, 16, 16, 16, 16);
 				// I also need to draw items in trinket slots *above* 310 but *below* 400, (320 for items and 370 for tooltips was chosen)
 				context.getMatrices().translate(0, 0, 70);
 			} else {
-				context.drawTexture(slotTextureId, slot.x, slot.y, 0, 0, 0, 16, 16, 16, 16);
-				context.drawTexture(MORE_SLOTS, slot.x - 1, slot.y - 1, 0, 4, 4, 18, 18, 256, 256);
+				context.drawTexture(RenderLayer::getGuiTextured, slotTextureId, slot.x, slot.y, 0, 0, 16, 16, 16, 16);
+				context.drawTexture(RenderLayer::getGuiTextured, MORE_SLOTS, slot.x - 1, slot.y - 1, 4, 4, 18, 18, 256, 256);
 			}
 		}
 		if (TrinketsClient.activeGroup != null && TrinketsClient.activeGroup.getSlotId() == slot.id) {

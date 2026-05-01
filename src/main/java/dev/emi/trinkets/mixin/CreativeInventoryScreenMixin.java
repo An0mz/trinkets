@@ -18,8 +18,8 @@ import dev.emi.trinkets.TrinketScreenManager;
 import dev.emi.trinkets.TrinketsClient;
 import dev.emi.trinkets.api.SlotGroup;
 import dev.emi.trinkets.api.TrinketsApi;
-import net.minecraft.client.gui.screen.ingame.AbstractInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen.CreativeScreenHandler;
 import net.minecraft.client.util.math.Rect2i;
 import net.minecraft.item.ItemGroup;
@@ -33,7 +33,7 @@ import net.minecraft.util.collection.DefaultedList;
  * @author Emi
  */
 @Mixin(CreativeInventoryScreen.class)
-public abstract class CreativeInventoryScreenMixin extends AbstractInventoryScreen<CreativeScreenHandler> implements TrinketScreen {
+public abstract class CreativeInventoryScreenMixin extends HandledScreen<CreativeScreenHandler> implements TrinketScreen {
 	@Shadow
 	private static ItemGroup selectedTab;
 	@Shadow
@@ -110,12 +110,6 @@ public abstract class CreativeInventoryScreenMixin extends AbstractInventoryScre
 		}
 	}
 	
-	@Inject(at = @At("HEAD"), method = "isClickOutsideBounds", cancellable = true)
-	private void isClickOutsideBounds(double mouseX, double mouseY, int left, int top, int button, CallbackInfoReturnable<Boolean> info) {
-		if (selectedTab.getType() == ItemGroup.Type.INVENTORY && TrinketScreenManager.isClickInsideTrinketBounds(mouseX, mouseY)) {
-			info.setReturnValue(false);
-		}
-	}
 
 	@Inject(at = @At("HEAD"), method = "isClickInTab", cancellable = true)
 	private void isClickInTab(ItemGroup group, double mouseX, double mouseY, CallbackInfoReturnable<Boolean> info) {

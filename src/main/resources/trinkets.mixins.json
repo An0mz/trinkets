@@ -18,6 +18,7 @@
     "ClickableWidgetMixin",
     "ClientPlayNetworkHandlerMixin",
     "CreativeInventoryScreenMixin",
+    "EntityRenderStateMixin",
     "HandledScreenMixin",
     "InventoryScreenMixin",
     "ItemStackMixin",

@@ -178,7 +178,9 @@ public class TrinketInventory implements Inventory {
 					if (i < newStacks.size()) {
 						newStacks.set(i, stack);
 					} else {
-						entity.dropStack(stack);
+						if (entity.getWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld) {
+						entity.dropStack(serverWorld, stack);
+					}
 					}
 				}
 

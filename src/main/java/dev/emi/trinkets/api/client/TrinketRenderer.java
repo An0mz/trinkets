@@ -23,7 +23,7 @@ public interface TrinketRenderer {
 	 * @param slotReference The exact slot for the item being rendered
 	 * @param contextModel The model this Trinket is being rendered on
 	 */
-	void render(ItemStack stack, SlotReference slotReference, EntityModel<? extends LivingEntity> contextModel,
+	void render(ItemStack stack, SlotReference slotReference, EntityModel<?> contextModel,
 				MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, LivingEntity entity,
 				float limbAngle, float limbDistance, float tickDelta, float animationProgress, float headYaw,
 				float headPitch);
@@ -36,21 +36,23 @@ public interface TrinketRenderer {
 	 * @param entity The wearer of the trinket
 	 * @param model The model to align to the body movement
 	 */
-	@SuppressWarnings("unchecked")
-	static void followBodyRotations(final LivingEntity entity, final BipedEntityModel<LivingEntity> model) {
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	static void followBodyRotations(final LivingEntity entity, final BipedEntityModel<?> model) {
 
-		EntityRenderer<? super LivingEntity> render = MinecraftClient.getInstance()
+		EntityRenderer<?, ?> render = MinecraftClient.getInstance()
 				.getEntityRenderDispatcher().getRenderer(entity);
 
-		if (render instanceof LivingEntityRenderer) {
-			//noinspection unchecked
-			LivingEntityRenderer<LivingEntity, EntityModel<LivingEntity>> livingRenderer =
-					(LivingEntityRenderer<LivingEntity, EntityModel<LivingEntity>>) render;
-			EntityModel<LivingEntity> entityModel = livingRenderer.getModel();
+		if (render instanceof LivingEntityRenderer livingRenderer) {
+			EntityModel entityModel = livingRenderer.getModel();
 
-			if (entityModel instanceof BipedEntityModel) {
-				BipedEntityModel<LivingEntity> bipedModel = (BipedEntityModel<LivingEntity>) entityModel;
-				bipedModel.copyBipedStateTo(model);
+			if (entityModel instanceof BipedEntityModel bipedModel) {
+				BipedEntityModel dest = (BipedEntityModel) model;
+				dest.head.copyTransform(bipedModel.head);
+				dest.body.copyTransform(bipedModel.body);
+				dest.rightArm.copyTransform(bipedModel.rightArm);
+				dest.leftArm.copyTransform(bipedModel.leftArm);
+				dest.rightLeg.copyTransform(bipedModel.rightLeg);
+				dest.leftLeg.copyTransform(bipedModel.leftLeg);
 			}
 		}
 	}
@@ -58,16 +60,16 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the player's face
 	 */
-	static void translateToFace(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToFace(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player, float headYaw, float headPitch) {
 
-		if (player.isInSwimmingPose() || player.isFallFlying()) {
+		if (player.isInSwimmingPose() || player.isGliding()) {
 			matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(model.head.roll));
 			matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(headYaw));
 			matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-45.0F));
 		} else {
 
-			if (player.isInSneakingPose() && !model.riding) {
+			if (player.isInSneakingPose() && !player.hasVehicle()) {
 				matrices.translate(0.0F, 0.25F, 0.0F);
 			}
 			matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(headYaw));
@@ -79,10 +81,10 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the player's chest/torso segment
 	 */
-	static void translateToChest(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToChest(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player) {
 
-		if (player.isInSneakingPose() && !model.riding && !player.isSwimming()) {
+		if (player.isInSneakingPose() && !player.hasVehicle() && !player.isSwimming()) {
 			matrices.translate(0.0F, 0.2F, 0.0F);
 			matrices.multiply(RotationAxis.POSITIVE_X.rotation(model.body.pitch));
 		}
@@ -93,10 +95,10 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the bottom of the player's right arm
 	 */
-	static void translateToRightArm(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToRightArm(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player) {
 
-		if (player.isInSneakingPose() && !model.riding && !player.isSwimming()) {
+		if (player.isInSneakingPose() && !player.hasVehicle() && !player.isSwimming()) {
 			matrices.translate(0.0F, 0.2F, 0.0F);
 		}
 		matrices.multiply(RotationAxis.POSITIVE_Y.rotation(model.body.yaw));
@@ -110,10 +112,10 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the bottom of the player's left arm
 	 */
-	static void translateToLeftArm(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToLeftArm(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player) {
 
-		if (player.isInSneakingPose() && !model.riding && !player.isSwimming()) {
+		if (player.isInSneakingPose() && !player.hasVehicle() && !player.isSwimming()) {
 			matrices.translate(0.0F, 0.2F, 0.0F);
 		}
 		matrices.multiply(RotationAxis.POSITIVE_Y.rotation(model.body.yaw));
@@ -127,10 +129,10 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the bottom of the player's right leg
 	 */
-	static void translateToRightLeg(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToRightLeg(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player) {
 
-		if (player.isInSneakingPose() && !model.riding && !player.isSwimming()) {
+		if (player.isInSneakingPose() && !player.hasVehicle() && !player.isSwimming()) {
 			matrices.translate(0.0F, 0.0F, 0.25F);
 		}
 		matrices.translate(-0.125F, 0.75F, 0.0F);
@@ -143,10 +145,10 @@ public interface TrinketRenderer {
 	/**
 	 * Translates the rendering context to the center of the bottom of the player's left leg
 	 */
-	static void translateToLeftLeg(MatrixStack matrices, PlayerEntityModel<AbstractClientPlayerEntity> model,
+	static void translateToLeftLeg(MatrixStack matrices, PlayerEntityModel model,
 			AbstractClientPlayerEntity player) {
 
-		if (player.isInSneakingPose() && !model.riding && !player.isSwimming()) {
+		if (player.isInSneakingPose() && !player.hasVehicle() && !player.isSwimming()) {
 			matrices.translate(0.0F, 0.0F, 0.25F);
 		}
 		matrices.translate(0.125F, 0.75F, 0.0F);
