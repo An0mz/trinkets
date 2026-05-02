@@ -1,9 +1,11 @@
 package dev.emi.trinkets.mixin;
 
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import dev.emi.trinkets.Point;
@@ -41,6 +43,22 @@ public abstract class InventoryScreenMixin extends HandledScreen<PlayerScreenHan
 	@Inject(at = @At("HEAD"), method = "render")
 	private void render(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo info) {
 		TrinketScreenManager.update(mouseX, mouseY);
+	}
+
+	/**
+	 * Clip the entity preview to its character viewer bounds so the player model
+	 * (arms, equipment, etc.) cannot bleed into the Trinkets slot panels in MC 1.21.2.
+	 * By redirecting the drawEntity call, we receive the exact bounds vanilla passes
+	 * (x1, y1, x2, y2) and apply an outer scissor using those same coordinates.
+	 */
+	@Redirect(method = "drawBackground", at = @At(value = "INVOKE",
+		target = "Lnet/minecraft/client/gui/screen/ingame/InventoryScreen;drawEntity(Lnet/minecraft/client/gui/DrawContext;IIIIIFFFLnet/minecraft/entity/LivingEntity;)V"))
+	private void drawEntityWithScissor(DrawContext context, int x1, int y1, int x2, int y2,
+			int size, float f, float mouseX, float mouseY, LivingEntity entity) {
+		context.enableScissor(x1, y1, x2, y2);
+		InventoryScreen.drawEntity(context, x1, y1, x2, y2, size, f, mouseX, mouseY, entity);
+		context.draw();
+		context.disableScissor();
 	}
 
 	@Inject(at = @At("RETURN"), method = "drawBackground")

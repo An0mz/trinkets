@@ -1,6 +1,8 @@
 package dev.emi.trinkets.mixin;
 
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -94,6 +96,20 @@ public abstract class CreativeInventoryScreenMixin extends HandledScreen<Creativ
 		if (selectedTab.getType() == ItemGroup.Type.INVENTORY) {
 			TrinketScreenManager.update(mouseX, mouseY);
 		}
+	}
+
+	/**
+	 * Clip the entity preview to its character viewer bounds in the creative inventory
+	 * (survival tab) to prevent player model bleeding into Trinkets slot panels (MC 1.21.2).
+	 */
+	@Redirect(method = "drawBackground", at = @At(value = "INVOKE",
+		target = "Lnet/minecraft/client/gui/screen/ingame/InventoryScreen;drawEntity(Lnet/minecraft/client/gui/DrawContext;IIIIIFFFLnet/minecraft/entity/LivingEntity;)V"))
+	private void drawEntityWithScissor(DrawContext context, int x1, int y1, int x2, int y2,
+			int size, float f, float mouseX, float mouseY, LivingEntity entity) {
+		context.enableScissor(x1, y1, x2, y2);
+		InventoryScreen.drawEntity(context, x1, y1, x2, y2, size, f, mouseX, mouseY, entity);
+		context.draw();
+		context.disableScissor();
 	}
 
 	@Inject(at = @At("RETURN"), method = "drawBackground")

@@ -71,16 +71,25 @@ public abstract class HandledScreenMixin extends Screen {
 				slotTextureId = BLANK_BACK;
 			}
 
-			RenderSystem.enableDepthTest();
+			// Push to Z=305 so the slot icon's depth value beats the entity arm's
+			// perspective-projected depth values in the depth buffer. The render layer
+			// re-enables depth testing inside endBatch(), so disableDepthTest() alone
+			// is not sufficient — a high GUI-space Z is required to win the LEQUAL test.
+			context.getMatrices().push();
+			context.getMatrices().translate(0, 0, 305);
 
 			if (ts.isTrinketFocused()) {
 				// Thus, I need to draw trinket slot backs over normal items at z 300 (310 was chosen)
 				context.drawTexture(RenderLayer::getGuiTextured, slotTextureId, slot.x, slot.y, 0, 0, 16, 16, 16, 16);
+				context.draw();
+				context.getMatrices().pop();
 				// I also need to draw items in trinket slots *above* 310 but *below* 400, (320 for items and 370 for tooltips was chosen)
 				context.getMatrices().translate(0, 0, 70);
 			} else {
 				context.drawTexture(RenderLayer::getGuiTextured, slotTextureId, slot.x, slot.y, 0, 0, 16, 16, 16, 16);
 				context.drawTexture(RenderLayer::getGuiTextured, MORE_SLOTS, slot.x - 1, slot.y - 1, 4, 4, 18, 18, 256, 256);
+				context.draw();
+				context.getMatrices().pop();
 			}
 		}
 		if (TrinketsClient.activeGroup != null && TrinketsClient.activeGroup.getSlotId() == slot.id) {

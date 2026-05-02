@@ -185,7 +185,10 @@ public class TrinketScreenManager {
 
 	public static void drawGroup(DrawContext context, SlotGroup group, SlotType type) {
 		TrinketPlayerScreenHandler handler = currentScreen.trinkets$getHandler();
-		RenderSystem.enableDepthTest();
+		// Disable depth testing so the entity's 3D perspective depth buffer values
+		// (written in drawBackground) cannot occlude this panel drawn in drawForeground.
+		// Painter's algorithm (draw order) handles Z ordering correctly here.
+		RenderSystem.disableDepthTest();
 		context.getMatrices().push();
 		context.getMatrices().translate(0, 0, 305);
 
@@ -256,7 +259,11 @@ public class TrinketScreenManager {
 		}
 
 		context.getMatrices().pop();
-		RenderSystem.disableDepthTest();
+		// Force an immediate GPU flush while depth testing is still disabled.
+		// context.drawTexture only queues calls; they execute at the next context.draw() flush,
+		// which may happen after DiffuseLighting.enableGuiDepthLighting() re-enables depth testing.
+		context.draw();
+		RenderSystem.enableDepthTest();
 	}
 
 	public static void drawActiveGroup(DrawContext context) {
@@ -281,6 +288,9 @@ public class TrinketScreenManager {
 			height = 4;
 			width--;
 		}
+		// Depth values written by the entity preview in drawBackground would cause
+		// these 2D textures to fail the depth test and vanish behind the model arm.
+		RenderSystem.disableDepthTest();
 		context.drawTexture(RenderLayer::getGuiTextured, MORE_SLOTS, x + 3, y,      7, 26, 1, 7, 256, 256);
 		// Repeated tops and bottoms
 		for (int i = 0; i < width; i++) {
@@ -313,6 +323,8 @@ public class TrinketScreenManager {
 			// Inner corner
 			context.drawTexture(RenderLayer::getGuiTextured, MORE_SLOTS, x, y + 79, 0, 58, 3, 7, 256, 256);
 		}
+		context.draw();
+		RenderSystem.enableDepthTest();
 	}
 
 	public static boolean isClickInsideTrinketBounds(double mouseX, double mouseY) {
